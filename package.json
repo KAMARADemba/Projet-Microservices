@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "json-server": "^1.0.0-beta.15"
+  },
+
+  "scripts": {
+    "mock:plats": "json-server --watch mock-json-server/plats-utilisateurs.json --port 3003",
+    "mock:menus": "json-server --watch mock-json-server/menus.json --port 3004",
+    "mock:commandes": "json-server --watch mock-json-server/commandes.json --port 3005"
+  }
+}
