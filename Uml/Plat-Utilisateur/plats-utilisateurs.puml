@@ -1,0 +1,189 @@
+@startuml Plats & Utilisateurs - Clean Architecture
+
+skinparam packageStyle rectangle
+skinparam classBackgroundColor #FAFAFA
+skinparam classBorderColor #555555
+skinparam arrowColor #333333
+skinparam packageBorderColor #888888
+skinparam packageBackgroundColor #F0F0F0
+
+title Architecture Clean - Composant Plats & Utilisateurs
+
+' =====================
+' COUCHE API (entrée HTTP)
+' =====================
+package "api" #D6EAF8 {
+
+    class PlatsUtilisateursApplication {
+        +@ApplicationPath("/api")
+        +@ApplicationScoped
+        --
+        -loadConfig() : Properties
+        +@Produces openPlatDbConnection() : PlatRepositoryInterface
+        +@Produces openUtilisateurDbConnection() : UtilisateurRepositoryInterface
+        -closePlatDbConnection(@Disposes)
+        -closeUtilisateurDbConnection(@Disposes)
+    }
+
+    class PlatResource {
+        +@Path("/plats")
+        --
+        +getAllPlats() : String
+        +getPlat(id: int) : String
+        +createPlat(plat: Plat) : Response
+        +updatePlat(id: int, plat: Plat) : Response
+        +deletePlat(id: int) : Response
+    }
+
+    class UtilisateurResource {
+        +@Path("/utilisateurs")
+        --
+        +getAllUtilisateurs() : String
+        +getUtilisateur(id: int) : String
+        +createUtilisateur(u: Utilisateur) : Response
+        +updateUtilisateur(id: int, u: Utilisateur) : Response
+        +deleteUtilisateur(id: int) : Response
+    }
+}
+
+' =====================
+' COUCHE USECASES (logique métier)
+' =====================
+package "usecases" #D5F5E3 {
+
+    class PlatService {
+        -platRepo : PlatRepositoryInterface
+        --
+        +getAllPlatsJSON() : String
+        +getPlatJSON(id: int) : String
+        +createPlat(plat: Plat) : boolean
+        +updatePlat(id: int, plat: Plat) : boolean
+        +deletePlat(id: int) : boolean
+    }
+
+    class UtilisateurService {
+        -utilisateurRepo : UtilisateurRepositoryInterface
+        --
+        +getAllUtilisateursJSON() : String
+        +getUtilisateurJSON(id: int) : String
+        +createUtilisateur(u: Utilisateur) : boolean
+        +updateUtilisateur(id: int, u: Utilisateur) : boolean
+        +deleteUtilisateur(id: int) : boolean
+    }
+}
+
+' =====================
+' COUCHE DOMAIN (entités métier)
+' =====================
+package "domain" #FEF9E7 {
+
+    class Plat {
+        -id : int
+        -nom : String
+        -description : String
+        -prix : double
+        --
+        +getId() : int
+        +getNom() : String
+        +getDescription() : String
+        +getPrix() : double
+        +setId(id: int)
+        +setNom(nom: String)
+        +setDescription(desc: String)
+        +setPrix(prix: double)
+    }
+
+    class Utilisateur {
+        -id : int
+        -nom : String
+        -prenom : String
+        -email : String
+        -adresse : String
+        --
+        +getId() : int
+        +getNom() : String
+        +getPrenom() : String
+        +getEmail() : String
+        +getAdresse() : String
+        +setters...()
+    }
+}
+
+' =====================
+' COUCHE REPOSITORIES (interfaces)
+' =====================
+package "repositories" #F9EBEA {
+
+    interface PlatRepositoryInterface {
+        +getPlat(id: int) : Plat
+        +getAllPlats() : ArrayList<Plat>
+        +createPlat(nom, description, prix) : boolean
+        +updatePlat(id, nom, description, prix) : boolean
+        +deletePlat(id: int) : boolean
+        +close()
+    }
+
+    interface UtilisateurRepositoryInterface {
+        +getUtilisateur(id: int) : Utilisateur
+        +getAllUtilisateurs() : ArrayList<Utilisateur>
+        +createUtilisateur(...) : boolean
+        +updateUtilisateur(...) : boolean
+        +deleteUtilisateur(id: int) : boolean
+        +close()
+    }
+}
+
+' =====================
+' COUCHE INFRASTRUCTURE (implémentation)
+' =====================
+package "infrastructure" #E8DAEF {
+
+    class PlatRepositoryMariadb {
+        -dbConnection : Connection
+        --
+        +PlatRepositoryMariadb(url, user, pwd)
+        +getPlat(id: int) : Plat
+        +getAllPlats() : ArrayList<Plat>
+        +createPlat(...) : boolean
+        +updatePlat(...) : boolean
+        +deletePlat(id: int) : boolean
+        +close()
+    }
+
+    class UtilisateurRepositoryMariadb {
+        -dbConnection : Connection
+        --
+        +UtilisateurRepositoryMariadb(url, user, pwd)
+        +getUtilisateur(id: int) : Utilisateur
+        +getAllUtilisateurs() : ArrayList<Utilisateur>
+        +createUtilisateur(...) : boolean
+        +updateUtilisateur(...) : boolean
+        +deleteUtilisateur(id: int) : boolean
+        +close()
+    }
+}
+
+' =====================
+' RELATIONS
+' =====================
+PlatResource --> PlatService : utilise
+UtilisateurResource --> UtilisateurService : utilise
+
+PlatService --> PlatRepositoryInterface : dépend de
+UtilisateurService --> UtilisateurRepositoryInterface : dépend de
+
+PlatService ..> Plat : manipule
+UtilisateurService ..> Utilisateur : manipule
+
+PlatRepositoryInterface <|.. PlatRepositoryMariadb : implémente
+UtilisateurRepositoryInterface <|.. UtilisateurRepositoryMariadb : implémente
+
+PlatsUtilisateursApplication ..> PlatRepositoryMariadb : @Produces
+PlatsUtilisateursApplication ..> UtilisateurRepositoryMariadb : @Produces
+PlatsUtilisateursApplication --> PlatResource : injecte CDI
+PlatsUtilisateursApplication --> UtilisateurResource : injecte CDI
+
+PlatRepositoryMariadb ..> Plat : crée
+UtilisateurRepositoryMariadb ..> Utilisateur : crée
+
+@enduml

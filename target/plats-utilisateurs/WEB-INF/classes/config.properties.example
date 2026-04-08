@@ -1,0 +1,3 @@
+db.url=jdbc:mariadb://mysql-[COMPTE].alwaysdata.net/[COMPTE]_db
+db.user=[COMPTE]
+db.pwd=[PASSWORD]

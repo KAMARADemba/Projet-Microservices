@@ -1,0 +1,162 @@
+@startuml Commandes - Clean Architecture
+
+skinparam packageStyle rectangle
+skinparam classBackgroundColor #FAFAFA
+skinparam classBorderColor #555555
+skinparam arrowColor #333333
+skinparam packageBorderColor #888888
+skinparam packageBackgroundColor #F0F0F0
+
+title Architecture Clean - Composant Commandes
+
+' =====================
+' COUCHE API (entrée HTTP)
+' =====================
+package "api" #D6EAF8 {
+
+    class CommandeResource {
+        +@Path("/commandes")
+        --
+        +getAllCommandes(abonneId: int) : String
+        +getCommande(id: int) : String
+        +createCommande(commande: Commande) : Response
+        +updateCommande(id: int, commande: Commande) : Response
+        +deleteCommande(id: int) : Response
+    }
+
+    class PlatsUtilisateursApplication {
+        +@ApplicationPath("/api")
+        --
+        +@Produces openCommandeDbConnection() : CommandeRepositoryInterface
+        +@Produces createMenuServiceClient() : MenuServiceClient
+        -closeCommandeDbConnection(@Disposes)
+    }
+}
+
+' =====================
+' COUCHE USECASES (logique métier)
+' =====================
+package "usecases" #D5F5E3 {
+
+    class CommandeService {
+        -repo : CommandeRepositoryInterface
+        -menuClient : MenuServiceClient
+        --
+        +getAllCommandesJSON(abonneId: int) : String
+        +getCommandeJSON(id: int) : String
+        +createCommandeJSON(input: Commande) : String
+        +updateCommande(id, adresse, dateLivraison) : boolean
+        +deleteCommande(id: int) : boolean
+    }
+}
+
+' =====================
+' COUCHE DOMAIN (entités métier)
+' =====================
+package "domain" #FEF9E7 {
+
+    class Commande {
+        -id : int
+        -abonneId : int
+        -dateCommande : String
+        -adresseLivraison : String
+        -dateLivraison : String
+        -lignes : List<LigneCommande>
+        -prixTotal : double
+        --
+        +getters / setters...()
+    }
+
+    class LigneCommande {
+        -menuId : int
+        -menuNom : String
+        -quantite : int
+        -prixUnitaire : double
+        -prixLigne : double
+        --
+        +getters / setters...()
+    }
+
+    Commande "1" *-- "1..*" LigneCommande : contient
+}
+
+' =====================
+' COUCHE REPOSITORIES (interface)
+' =====================
+package "repositories" #F9EBEA {
+
+    interface CommandeRepositoryInterface {
+        <<extends Closeable>>
+        --
+        +getAllCommandes(abonneId: int) : List<Commande>
+        +getCommandeById(id: int) : Commande
+        +createCommande(commande: Commande) : int
+        +updateCommande(id, adresse, dateLivraison) : boolean
+        +deleteCommande(id: int) : boolean
+    }
+}
+
+' =====================
+' COUCHE INFRASTRUCTURE (implémentation + client HTTP)
+' =====================
+package "infrastructure" #E8DAEF {
+
+    class CommandeRepositoryMariadb {
+        -dbConnection : Connection
+        --
+        +CommandeRepositoryMariadb(url, user, pwd)
+        -buildCommande(rs: ResultSet) : Commande
+        -getLignesForCommande(commandeId: int) : List<LigneCommande>
+        +getAllCommandes(abonneId: int) : List<Commande>
+        +getCommandeById(id: int) : Commande
+        +createCommande(commande: Commande) : int
+        +updateCommande(...) : boolean
+        +deleteCommande(id: int) : boolean
+        +close()
+    }
+
+    class MenuServiceClient {
+        -MENUS_API_URL : String = "http://localhost:3004/menus/"
+        --
+        +fetchLigneCommande(menuId: int, quantite: int) : LigneCommande
+    }
+
+    note right of MenuServiceClient
+        Appelle l'API Menus (JSON-Server)
+        pour récupérer nom + prix du menu
+        au moment de la commande (snapshot)
+    end note
+}
+
+' =====================
+' API EXTERNE
+' =====================
+package "API Menus (externe)" #FDEBD0 {
+    class MenusAPI {
+        GET /menus/{id}
+        --
+        port : 3004
+        retourne : nom, prix
+    }
+}
+
+' =====================
+' RELATIONS
+' =====================
+CommandeResource --> CommandeService : utilise
+CommandeService --> CommandeRepositoryInterface : dépend de
+CommandeService --> MenuServiceClient : utilise
+CommandeService ..> Commande : manipule
+CommandeService ..> LigneCommande : crée
+
+CommandeRepositoryInterface <|.. CommandeRepositoryMariadb : implémente
+CommandeRepositoryMariadb ..> Commande : crée
+CommandeRepositoryMariadb ..> LigneCommande : crée
+
+PlatsUtilisateursApplication ..> CommandeRepositoryMariadb : @Produces
+PlatsUtilisateursApplication ..> MenuServiceClient : @Produces
+PlatsUtilisateursApplication --> CommandeResource : injecte CDI
+
+MenuServiceClient --> MenusAPI : HTTP GET
+
+@enduml
