@@ -2,6 +2,8 @@ package api;
 
 import infrastructure.PlatRepositoryMariadb;
 import infrastructure.UtilisateurRepositoryMariadb;
+import infrastructure.CommandeRepositoryMariadb;
+import infrastructure.MenuServiceClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Produces;
@@ -9,7 +11,9 @@ import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import repositories.PlatRepositoryInterface;
 import repositories.UtilisateurRepositoryInterface;
+import repositories.CommandeRepositoryInterface;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -90,5 +94,39 @@ public class PlatsUtilisateursApplication extends Application {
      */
     private void closeUtilisateurDbConnection(@Disposes UtilisateurRepositoryInterface utilisateurRepo) {
         utilisateurRepo.close();
+    }
+
+    /**
+     * Méthode CDI produisant la connexion à la BD pour les commandes
+     */
+    @Produces
+    private CommandeRepositoryInterface openCommandeDbConnection() {
+        CommandeRepositoryMariadb db = null;
+        try {
+            Properties props = loadConfig();
+            db = new CommandeRepositoryMariadb(
+                    props.getProperty("db.url"),
+                    props.getProperty("db.user"),
+                    props.getProperty("db.pwd")
+            );
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+        return db;
+    }
+
+    /**
+     * Méthode CDI fermant la connexion à la BD pour les commandes
+     */
+    private void closeCommandeDbConnection(@Disposes CommandeRepositoryInterface commandeRepo) throws IOException {
+        commandeRepo.close();
+    }
+
+    /**
+     * Méthode CDI produisant le client HTTP vers l'API Menus
+     */
+    @Produces
+    private MenuServiceClient createMenuServiceClient() {
+        return new MenuServiceClient();
     }
 }
