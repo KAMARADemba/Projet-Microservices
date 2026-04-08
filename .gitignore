@@ -1,2 +1,50 @@
-node_modules/
+# ========================
+# IntelliJ IDEA
+# ========================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# ========================
+# Maven
+# ========================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# ========================
+# Configuration sensible
+# ========================
 src/main/resources/config.properties
+
+# ========================
+# GlassFish
+# ========================
+*.war
+*.ear
+*.jar
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# Node / JSON-Server
+# ========================
+node_modules/
+npm-debug.log*
