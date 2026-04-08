@@ -1,2 +1,5 @@
 node_modules/
 src/main/resources/config.properties
+
+
+.idea
